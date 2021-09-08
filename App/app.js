@@ -2,9 +2,6 @@ class Calculator {
   constructor(outputPrev, outputCurrent) {
     this.prevOutput = outputPrev[0].innerText;
     this.currentOutput = outputCurrent[0].innerText;
-
-    console.log(this.prevOutput);
-    console.log(this.currentOutput);
   }
 
   clear() {
@@ -14,10 +11,38 @@ class Calculator {
   }
 
   delete() {
-    this.currentOutput = this.currentOutput.slice(0, -1);
+    this.currentOutput = this.currentOutput.toString().slice(0, -1);
   }
 
-  compute() {}
+  compute() {
+    let computation;
+    const prev = parseFloat(this.prevOutput);
+    console.log(prev);
+    const current = parseFloat(this.currentOutput);
+
+    if (isNaN(prev) || isNaN(current)) {
+      return;
+    }
+    switch (this.operation) {
+      case "+":
+        computation = prev + current;
+        break;
+      case "-":
+        computation = prev - current;
+        break;
+      case "*":
+        computation = prev * current;
+        break;
+      case "/":
+        computation = prev / current;
+        break;
+      default:
+        return;
+    }
+    this.currentOutput = computation;
+    this.operation = undefined;
+    this.prevOutput = "";
+  }
 
   appendNumber(number) {
     if (number === "." && this.currentOutput.includes(".")) return;
@@ -25,12 +50,47 @@ class Calculator {
   }
 
   chooseOperation(operations) {
-    if (this.currentOutput.includes(operations)) return;
-    this.currentOutput = this.currentOutput.toString() + operations;
+    if (this.currentOutput === "") return;
+    if (this.prevOutput !== "") {
+      this.compute();
+    }
+
+    this.operation = operations;
+    this.prevOutput = this.currentOutput + this.operation;
+    this.currentOutput = "";
+  }
+
+  getDisplayNumber(number) {
+    const stringNumber = number.toString();
+    const integerDigit = parseFloat(stringNumber.split(".")[0]);
+    const decimalDigit = stringNumber.split(".")[1];
+
+    let integerDisplay;
+    if (isNaN(integerDigit)) {
+      integerDisplay = "";
+    } else {
+      integerDisplay = integerDigit.toLocaleString("en", {
+        maximumFractionDigits: 0,
+      });
+    }
+
+    if (decimalDigit != null) {
+      return `${integerDisplay}.${decimalDigit}`;
+    } else {
+      return integerDisplay;
+    }
   }
 
   updateDisplay() {
-    outputCurrentDOM[0].innerText = this.currentOutput;
+    outputCurrentDOM[0].innerText = this.getDisplayNumber(this.currentOutput);
+
+    if (this.operation != null) {
+      outputPrevDOM[0].innerText = `${this.getDisplayNumber(this.prevOutput)} ${
+        this.operation
+      }`;
+    } else {
+      outputPrevDOM[0].innerText = "";
+    }
   }
 }
 
@@ -43,7 +103,6 @@ const outputPrevDOM = document.querySelectorAll("[data-prev-state]");
 const outputCurrentDOM = document.querySelectorAll("[data-curr-state]");
 
 const calculator = new Calculator(outputPrevDOM, outputCurrentDOM);
-console.log(numberButtons);
 
 numberButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -71,4 +130,9 @@ clearButton.forEach((button) => {
     calculator.clear();
     calculator.updateDisplay();
   });
+});
+
+equalButton[0].addEventListener("click", () => {
+  calculator.compute();
+  calculator.updateDisplay();
 });
